@@ -1,4 +1,6 @@
 #!/usr/local/bin/fish
+set USE_ARDUINO 0
+
 set base_url "http://api.weatherstack.com"
 set access_key (cat .env | grep "WEATHER_STACK_API_KEY" | sed 's/WEATHER_STACK_API_KEY=//g')
 set fifo_pipe (cat .env | grep "HTWISJ_PIPE_NAME" | sed 's/HTWISJ_PIPE_NAME=//g')
@@ -17,7 +19,8 @@ function check_weather --argument-names city
 
     # Query the endpoint
     echo "Querying $request_url"
-    set output_name (date +%Y-%m-%d)"-"(echo $city | sed 's/ //g').json
+    set date_str (date +%Y-%m-%d_%r | sed 's/:[0-9][0-9]:[0-9][0-9] //g')
+    set output_name (echo $date_str)"-"(echo $city | sed 's/ //g').json
     mkdir -p ./data
     curl --GET "$request_url" 2> /dev/null 1> "$output_name"
     mv "$output_name" ./data
@@ -32,6 +35,12 @@ function check_weather --argument-names city
     set message "It's $result in $city, with $degrees degrees"
     echo $message
     osascript  -e "display notification \"$message\" with title \"Weather Update\""
+
+    if test $USE_ARDUINO -eq 0
+        return
+    end
+    exit 0
+
 
     set send_red 0
 
