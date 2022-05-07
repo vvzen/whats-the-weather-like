@@ -1,13 +1,16 @@
 #!/usr/local/bin/fish
 set USE_ARDUINO 0
 
+set CURRENT_DIR (dirname (realpath (status --current-filename)))
+pushd $CURRENT_DIR
+
 set base_url "http://api.weatherstack.com"
 set access_key (cat .env | grep "WEATHER_STACK_API_KEY" | sed 's/WEATHER_STACK_API_KEY=//g')
 set fifo_pipe (cat .env | grep "HTWISJ_PIPE_NAME" | sed 's/HTWISJ_PIPE_NAME=//g')
 
 set jq_install_path (which jq)
 if test -z $jq_install_path
-    echo "'jq' not found. Please install it."
+    echo -e "'jq' not found. Please install it.\n"
     exit 1
 end
 
@@ -69,6 +72,10 @@ for city in $cities;
     check_weather $city
     echo -e "\n"
 end
+
+touch lastrun.weather_check
+
+popd
 
 # Possible results, so far:
 # - Partly Cloudy
