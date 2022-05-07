@@ -1,10 +1,11 @@
 #!/usr/local/bin/fish
-set access_key (cat .env | grep "WEATHER_STACK_API_KEY" | sed 's/WEATHER_STACK_API_KEY=//g')
 set base_url "http://api.weatherstack.com"
+set access_key (cat .env | grep "WEATHER_STACK_API_KEY" | sed 's/WEATHER_STACK_API_KEY=//g')
+set fifo_pipe (cat .env | grep "HTWISJ_PIPE_NAME" | sed 's/HTWISJ_PIPE_NAME=//g')
 
-set jq_install_dir (which jq)
-if test -z $jq_install_dir
-    echo "jq not found. Please install it."
+set jq_install_path (which jq)
+if test -z $jq_install_path
+    echo "'jq' not found. Please install it."
     exit 1
 end
 
@@ -32,10 +33,27 @@ function check_weather --argument-names city
     echo $message
     osascript  -e "display notification \"$message\" with title \"Weather Update\""
 
+    set send_red 0
+
+    switch $result
+        case "sunny"
+            set send_red 1
+        case "clear"
+            set send_red 1
+    end
+
+    echo "Sending message to $fifo_pipe"
+    if test $send_red -eq 1
+        echo "RED" > $fifo_pipe
+    else
+        echo "BLUE" > $fifo_pipe
+    end
+
 end
 
 # Cities we're interested in
 set cities "San Jose" "London"
+#set cities "San Jose"
 
 for city in $cities;
     echo "Querying weather in $city"
